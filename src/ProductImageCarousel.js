@@ -626,8 +626,8 @@ const ProductImageCarousel = ({ isDarkMode }) => {
                             whileTap={{ scale: 0.95 }}
                             onClick={() => sliderRef.current.slickGoTo(index)}
                             className={`focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-md overflow-hidden transition-all ${sliderRef.current && sliderRef.current.innerSlider.state.currentSlide === index
-                                ? 'ring-2 ring-blue-500 shadow-md'
-                                : 'opacity-70 hover:opacity-100'
+                              ? 'ring-2 ring-blue-500 shadow-md'
+                              : 'opacity-70 hover:opacity-100'
                               }`}
                             aria-label={`Go to image ${index + 1}`}
                           >
@@ -660,10 +660,10 @@ const ProductImageCarousel = ({ isDarkMode }) => {
         <motion.button
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="w-full mt-4 bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition-all duration-300 flex items-center justify-center gap-2"
+          className="w-48 mx-auto mt-4 bg-primary-600 hover:bg-primary-700 text-white font-semibold py-2 px-4 rounded-lg shadow-lg transition-all duration-300 flex items-center justify-center gap-2 text-sm"
           onClick={handleSubmit}
         >
-          <CheckCircle2 className="w-5 h-5" />
+          <CheckCircle2 className="w-4 h-4" />
           Submit Images
         </motion.button>
       )}
@@ -673,9 +673,9 @@ const ProductImageCarousel = ({ isDarkMode }) => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mt-4 p-4 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 rounded-lg flex items-center justify-center gap-2"
+          className="mt-4 p-3 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 rounded-lg flex items-center justify-center gap-2 text-sm"
         >
-          <CheckCircle2 className="w-5 h-5" />
+          <CheckCircle2 className="w-4 h-4" />
           Images submitted successfully!
         </motion.div>
       )}
@@ -694,23 +694,23 @@ const ProductImageCarousel = ({ isDarkMode }) => {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden"
+              className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-2xl max-h-[80vh] overflow-hidden"
             >
               {/* Popover Header */}
-              <div className="flex items-center justify-between p-4 border-b dark:border-gray-700">
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+              <div className="flex items-center justify-between p-3 border-b dark:border-gray-700">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                   Submitted Images
                 </h3>
                 <button
                   onClick={handleClosePopover}
-                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+                  className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
                 >
-                  <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                  <X className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                 </button>
               </div>
 
               {/* Popover Content */}
-              <div className="p-4">
+              <div className="p-3">
                 <Slider {...sliderSettings} className="submitted-carousel">
                   {images.map((image, index) => (
                     <div key={index} className="px-2">
@@ -724,20 +724,20 @@ const ProductImageCarousel = ({ isDarkMode }) => {
                         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                           <button
                             onClick={() => handleImageClick(image)}
-                            className="p-2 bg-white/10 hover:bg-white/20 rounded-full backdrop-blur-sm transition-colors"
+                            className="p-1.5 bg-white/10 hover:bg-white/20 rounded-full backdrop-blur-sm transition-colors"
                           >
-                            <Maximize2 className="w-5 h-5 text-white" />
+                            <Maximize2 className="w-4 h-4 text-white" />
                           </button>
                           <button
                             onClick={() => downloadImage(image)}
-                            className="p-2 bg-white/10 hover:bg-white/20 rounded-full backdrop-blur-sm transition-colors"
+                            className="p-1.5 bg-white/10 hover:bg-white/20 rounded-full backdrop-blur-sm transition-colors"
                           >
-                            <Download className="w-5 h-5 text-white" />
+                            <Download className="w-4 h-4 text-white" />
                           </button>
                         </div>
                       </div>
-                      <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                        <p>Size: {image.size}</p>
+                      <div className="mt-1.5 text-xs text-gray-600 dark:text-gray-400">
+                        <p>Size: {(image.size / 1024 / 1024).toFixed(2)} MB</p>
                         <p>Dimensions: {image.dimensions.width}x{image.dimensions.height}</p>
                       </div>
                     </div>
