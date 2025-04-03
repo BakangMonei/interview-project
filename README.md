@@ -1,70 +1,155 @@
-# Getting Started with Create React App
+# Meliotech Product Image Carousel
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A modern, feature-rich React application for managing and showcasing product images with a beautiful UI and smooth user experience.
 
-## Available Scripts
+## 🌟 Features
 
-In the project directory, you can run:
+- **Image Upload & Management**
+  - Drag and drop interface
+  - Multiple file upload support
+  - File type validation (JPG, PNG, GIF)
+  - File size limit (10MB per image)
+  - Real-time upload progress indicator
 
-### `npm start`
+- **Image Gallery**
+  - Grid view with responsive layout
+  - Image filtering by type
+  - Sorting options (by date, name, size)
+  - Image metadata display
+  - Quick actions (view, download, share, delete)
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+- **Carousel Mode**
+  - Smooth transitions between images
+  - Thumbnail navigation
+  - Auto-play functionality
+  - Touch-friendly controls
+  - Keyboard navigation support
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+- **Fullscreen View**
+  - High-resolution image display
+  - Image information overlay
+  - Quick action buttons
+  - Smooth animations
 
-### `npm test`
+- **UI/UX Features**
+  - Dark/Light mode support
+  - Responsive design
+  - Beautiful animations
+  - Loading states
+  - Toast notifications
+  - Accessibility features
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## 🛠️ Tech Stack
 
-### `npm run build`
+- **Frontend Framework**
+  - React 19
+  - Framer Motion (animations)
+  - Tailwind CSS (styling)
+  - React Slick (carousel)
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+- **UI Components & Icons**
+  - Lucide React (icons)
+  - React Toastify (notifications)
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+- **Development Tools**
+  - Create React App
+  - PostCSS
+  - Autoprefixer
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## 🚀 Deployment
 
-### `npm run eject`
+The application is deployed on Vercel:
+[View Live Demo](https://your-vercel-url.vercel.app)
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+## 📁 Project Structure
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+```
+src/
+├── components/
+│   ├── App.js                 # Main application component
+│   └── ProductImageCarousel.js # Core carousel component
+├── styles/
+│   ├── index.css             # Global styles
+│   └── App.css               # App-specific styles
+├── utils/                    # Utility functions
+└── assets/                   # Static assets
+```
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+## 🔧 Key Components
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+### ProductImageCarousel
+- Handles image upload and management
+- Implements drag and drop functionality
+- Manages image state and metadata
+- Provides filtering and sorting capabilities
+- Implements carousel and fullscreen views
 
-## Learn More
+### App
+- Manages application-wide state
+- Implements dark/light mode
+- Handles responsive navigation
+- Provides layout structure
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+## 🎨 Styling
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+- Uses Tailwind CSS for utility-first styling
+- Custom animations with Framer Motion
+- Responsive design with mobile-first approach
+- Dark mode support with CSS variables
+- Custom color scheme and typography
 
-### Code Splitting
+## 🔍 Known Issues & Limitations
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+1. **Image Size**
+   - Maximum file size limited to 10MB per image
+   - Large images may affect performance
 
-### Analyzing the Bundle Size
+2. **Browser Support**
+   - Web Share API not supported in all browsers
+   - Falls back to clipboard copy when sharing is not available
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+3. **Memory Management**
+   - Large number of images may impact performance
+   - Object URLs are properly cleaned up on component unmount
 
-### Making a Progressive Web App
+## 🚀 Getting Started
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/meliotech-product-carousel.git
+   ```
 
-### Advanced Configuration
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+3. Start the development server:
+   ```bash
+   npm start
+   ```
 
-### Deployment
+4. Build for production:
+   ```bash
+   npm run build
+   ```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+## 📝 Contributing
 
-### `npm run build` fails to minify
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- [React](https://reactjs.org/)
+- [Tailwind CSS](https://tailwindcss.com/)
+- [Framer Motion](https://www.framer.com/motion/)
+- [React Slick](https://react-slick.neostack.com/)
+- [Lucide Icons](https://lucide.dev/)
