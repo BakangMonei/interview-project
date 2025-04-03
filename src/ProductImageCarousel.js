@@ -2,46 +2,53 @@ import React, { useState, useRef, useEffect } from 'react';
 import Slider from 'react-slick';
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
-import { Upload, X, ChevronLeft, ChevronRight, Image as ImageIcon, Trash2 } from 'lucide-react';
+import { Upload, X, ChevronLeft, ChevronRight, Image as ImageIcon, Trash2, Maximize2, Download, Share2, Filter } from 'lucide-react';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const ProductImageCarousel = () => {
+const ProductImageCarousel = ({ isDarkMode }) => {
   const [images, setImages] = useState([]);
   const [previewMode, setPreviewMode] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [filterType, setFilterType] = useState('all');
+  const [sortBy, setSortBy] = useState('date');
   const fileInputRef = useRef(null);
   const sliderRef = useRef(null);
-  
+
   // Handle file selection
   const handleFileChange = async (e) => {
     const selectedFiles = Array.from(e.target.files);
-    
+
     if (selectedFiles.length === 0) return;
-    
+
     setIsUploading(true);
-    
+
     try {
       // Simulating upload delay for realistic UX
       await new Promise(resolve => setTimeout(resolve, 800));
-      
+
       // Create URL objects for previewing images
       const newImages = selectedFiles.map(file => ({
         file,
         url: URL.createObjectURL(file),
         name: file.name,
-        id: `img-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+        id: `img-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        type: file.type,
+        size: file.size,
+        date: new Date().toISOString(),
+        dimensions: { width: 0, height: 0 } // Will be updated after image loads
       }));
-      
+
       setImages(prevImages => [...prevImages, ...newImages]);
-      
+
       toast.success(`Successfully added ${selectedFiles.length} ${selectedFiles.length === 1 ? 'image' : 'images'}!`, {
         position: "bottom-right",
         autoClose: 3000
       });
-      
+
       // Automatically switch to preview mode if this is the first image(s)
       if (images.length === 0) {
         setTimeout(() => setPreviewMode(true), 500);
@@ -55,27 +62,94 @@ const ProductImageCarousel = () => {
       setIsUploading(false);
     }
   };
-  
+
+  // Update image dimensions after load
+  const updateImageDimensions = (imageId, width, height) => {
+    setImages(prevImages =>
+      prevImages.map(img =>
+        img.id === imageId
+          ? { ...img, dimensions: { width, height } }
+          : img
+      )
+    );
+  };
+
   // Handle image removal
   const removeImage = (indexToRemove) => {
     const imageToRemove = images[indexToRemove];
-    
+
     setImages(images.filter((_, index) => index !== indexToRemove));
-    
+
     // Revoke object URL to prevent memory leaks
     URL.revokeObjectURL(imageToRemove.url);
-    
+
     toast.info("Image removed", {
       position: "bottom-right",
       autoClose: 2000
     });
-    
+
     // If removing the last image, switch back to upload mode
     if (images.length === 1) {
       setPreviewMode(false);
     }
   };
-  
+
+  // Handle image download
+  const downloadImage = (image) => {
+    const link = document.createElement('a');
+    link.href = image.url;
+    link.download = image.name;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Handle image sharing
+  const shareImage = async (image) => {
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: image.name,
+          text: 'Check out this image!',
+          url: image.url
+        });
+      } else {
+        // Fallback to clipboard copy
+        await navigator.clipboard.writeText(image.url);
+        toast.success('Image URL copied to clipboard!', {
+          position: "bottom-right",
+          autoClose: 2000
+        });
+      }
+    } catch (error) {
+      console.error('Error sharing:', error);
+    }
+  };
+
+  // Filter and sort images
+  const getFilteredAndSortedImages = () => {
+    let filteredImages = [...images];
+
+    // Apply filter
+    if (filterType !== 'all') {
+      filteredImages = filteredImages.filter(img => img.type.startsWith(`image/${filterType}`));
+    }
+
+    // Apply sorting
+    filteredImages.sort((a, b) => {
+      if (sortBy === 'date') {
+        return new Date(b.date) - new Date(a.date);
+      } else if (sortBy === 'name') {
+        return a.name.localeCompare(b.name);
+      } else if (sortBy === 'size') {
+        return b.size - a.size;
+      }
+      return 0;
+    });
+
+    return filteredImages;
+  };
+
   // Clean up object URLs when component unmounts
   useEffect(() => {
     return () => {
@@ -84,7 +158,7 @@ const ProductImageCarousel = () => {
       });
     };
   }, []);
-  
+
   // Settings for the react-slick carousel
   const sliderSettings = {
     dots: true,
@@ -93,8 +167,8 @@ const ProductImageCarousel = () => {
     slidesToShow: 1,
     slidesToScroll: 1,
     accessibility: true,
-    prevArrow: <CustomPrevArrow />,
-    nextArrow: <CustomNextArrow />,
+    prevArrow: <CustomPrevArrow isDarkMode={isDarkMode} />,
+    nextArrow: <CustomNextArrow isDarkMode={isDarkMode} />,
     autoplay: images.length > 1,
     autoplaySpeed: 5000,
     pauseOnHover: true,
@@ -123,62 +197,62 @@ const ProductImageCarousel = () => {
       }
     ]
   };
-  
+
   // Custom arrow components for accessibility and styling
   function CustomPrevArrow(props) {
     const { className, onClick } = props;
     return (
-      <motion.button 
+      <motion.button
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.9 }}
-        className="absolute left-4 top-1/2 z-10 -translate-y-1/2 bg-white bg-opacity-90 p-3 rounded-full shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className={`absolute left-4 top-1/2 z-10 -translate-y-1/2 ${props.isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'} bg-opacity-90 p-3 rounded-full shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500`}
         onClick={onClick}
         aria-label="Previous image"
       >
-        <ChevronLeft className="h-6 w-6 text-blue-600" />
+        <ChevronLeft className="h-6 w-6" />
       </motion.button>
     );
   }
-  
+
   function CustomNextArrow(props) {
     const { className, onClick } = props;
     return (
-      <motion.button 
+      <motion.button
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.9 }}
-        className="absolute right-4 top-1/2 z-10 -translate-y-1/2 bg-white bg-opacity-90 p-3 rounded-full shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className={`absolute right-4 top-1/2 z-10 -translate-y-1/2 ${props.isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'} bg-opacity-90 p-3 rounded-full shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500`}
         onClick={onClick}
         aria-label="Next image"
       >
-        <ChevronRight className="h-6 w-6 text-blue-600" />
+        <ChevronRight className="h-6 w-6" />
       </motion.button>
     );
   }
-  
+
   // Handle drag and drop functionality
   const handleDragOver = (e) => {
     e.preventDefault();
     setIsDragging(true);
   };
-  
+
   const handleDragLeave = (e) => {
     e.preventDefault();
     setIsDragging(false);
   };
-  
+
   const handleDrop = async (e) => {
     e.preventDefault();
     setIsDragging(false);
     setIsUploading(true);
-    
+
     try {
       const droppedFiles = Array.from(e.dataTransfer.files);
-      
+
       // Only process image files
-      const imageFiles = droppedFiles.filter(file => 
+      const imageFiles = droppedFiles.filter(file =>
         file.type.startsWith('image/')
       );
-      
+
       if (imageFiles.length === 0) {
         toast.warning("No valid image files found. Please upload JPG, PNG, or GIF files.", {
           position: "bottom-right",
@@ -187,25 +261,29 @@ const ProductImageCarousel = () => {
         setIsUploading(false);
         return;
       }
-      
+
       // Simulating upload delay for realistic UX
       await new Promise(resolve => setTimeout(resolve, 800));
-      
+
       // Create URL objects for previewing images
       const newImages = imageFiles.map(file => ({
         file,
         url: URL.createObjectURL(file),
         name: file.name,
-        id: `img-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+        id: `img-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        type: file.type,
+        size: file.size,
+        date: new Date().toISOString(),
+        dimensions: { width: 0, height: 0 }
       }));
-      
+
       setImages(prevImages => [...prevImages, ...newImages]);
-      
+
       toast.success(`Successfully added ${imageFiles.length} ${imageFiles.length === 1 ? 'image' : 'images'}!`, {
         position: "bottom-right",
         autoClose: 3000
       });
-      
+
       // Automatically switch to preview mode if this is the first image(s)
       if (images.length === 0) {
         setTimeout(() => setPreviewMode(true), 500);
@@ -219,28 +297,38 @@ const ProductImageCarousel = () => {
       setIsUploading(false);
     }
   };
-  
+
   // Toggle between upload and preview modes
   const togglePreviewMode = () => {
     setPreviewMode(!previewMode);
   };
-  
+
+  // Handle image click for fullscreen view
+  const handleImageClick = (image) => {
+    setSelectedImage(image);
+  };
+
+  // Close fullscreen view
+  const closeFullscreen = () => {
+    setSelectedImage(null);
+  };
+
   return (
-    <div className="max-w-5xl mx-auto p-6">
-      <ToastContainer />
-      
-      <motion.h1 
+    <div className={`max-w-5xl mx-auto p-6 ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>
+      <ToastContainer theme={isDarkMode ? 'dark' : 'light'} />
+
+      <motion.h1
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="text-3xl font-bold mb-8 text-center text-gray-800"
+        className={`text-3xl font-bold mb-8 text-center ${isDarkMode ? 'text-white' : 'text-gray-800'}`}
       >
         Product Image Showcase
       </motion.h1>
-      
+
       {/* Mode toggle button */}
       {images.length > 0 && (
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2 }}
@@ -248,7 +336,7 @@ const ProductImageCarousel = () => {
         >
           <button
             onClick={togglePreviewMode}
-            className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-all transform hover:scale-105 shadow-md font-medium flex items-center space-x-2"
+            className={`px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-all transform hover:scale-105 shadow-md font-medium flex items-center space-x-2 ${isDarkMode ? 'shadow-blue-900/30' : ''}`}
             aria-pressed={previewMode}
           >
             {previewMode ? (
@@ -265,7 +353,7 @@ const ProductImageCarousel = () => {
           </button>
         </motion.div>
       )}
-      
+
       <AnimatePresence mode="wait">
         {!previewMode ? (
           /* Upload Mode */
@@ -280,7 +368,7 @@ const ProductImageCarousel = () => {
             {/* Drag and drop area */}
             <motion.div
               whileHover={{ scale: 1.01 }}
-              className={`border-2 ${isDragging ? 'border-blue-500 bg-blue-50' : 'border-dashed border-gray-300'} rounded-xl p-10 text-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-colors`}
+              className={`border-2 ${isDragging ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-dashed border-gray-300 dark:border-gray-700'} rounded-xl p-10 text-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors`}
               onClick={() => fileInputRef.current.click()}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
@@ -299,17 +387,17 @@ const ProductImageCarousel = () => {
                   animate={{ y: [0, -10, 0] }}
                   transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
                 >
-                  <Upload className="h-16 w-16 text-blue-500 mb-4" />
+                  <Upload className={`h-16 w-16 ${isDarkMode ? 'text-blue-400' : 'text-blue-500'} mb-4`} />
                 </motion.div>
-                <p className="text-xl font-medium text-gray-800 mb-2">
+                <p className={`text-xl font-medium mb-2 ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>
                   Click to upload or drag and drop
                 </p>
-                <p className="text-sm text-gray-600 mb-4">
+                <p className={`text-sm mb-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                   Support for JPG, PNG, GIF (Max 10MB each)
                 </p>
                 {isUploading && (
                   <div className="mt-2">
-                    <div className="w-40 h-1 bg-gray-200 rounded-full overflow-hidden">
+                    <div className="w-40 h-1 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                       <motion.div
                         initial={{ width: "0%" }}
                         animate={{ width: "100%" }}
@@ -317,7 +405,7 @@ const ProductImageCarousel = () => {
                         className="h-full bg-blue-500"
                       />
                     </div>
-                    <p className="text-sm text-gray-600 mt-2">Processing...</p>
+                    <p className={`text-sm mt-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Processing...</p>
                   </div>
                 )}
               </div>
@@ -332,7 +420,7 @@ const ProductImageCarousel = () => {
                 disabled={isUploading}
               />
             </motion.div>
-            
+
             {/* Preview of selected images */}
             {images.length > 0 && (
               <motion.div
@@ -341,53 +429,114 @@ const ProductImageCarousel = () => {
                 transition={{ delay: 0.3 }}
               >
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-semibold text-gray-800">Gallery ({images.length})</h2>
-                  {images.length > 0 && (
-                    <button 
-                      onClick={() => {
-                        setImages([]);
-                        toast.info("All images removed", {
-                          position: "bottom-right",
-                          autoClose: 2000
-                        });
-                      }}
-                      className="flex items-center text-red-500 hover:text-red-700 transition-colors"
-                      aria-label="Remove all images"
-                    >
-                      <Trash2 className="h-4 w-4 mr-1" />
-                      <span>Clear all</span>
-                    </button>
-                  )}
+                  <h2 className={`text-xl font-semibold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>Gallery ({images.length})</h2>
+                  <div className="flex items-center space-x-4">
+                    {/* Filter and Sort Controls */}
+                    <div className="flex items-center space-x-2">
+                      <Filter className={`h-4 w-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`} />
+                      <select
+                        value={filterType}
+                        onChange={(e) => setFilterType(e.target.value)}
+                        className={`px-2 py-1 rounded-md text-sm ${isDarkMode ? 'bg-gray-800 text-white border-gray-700' : 'bg-white text-gray-800 border-gray-300'} border focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                      >
+                        <option value="all">All Types</option>
+                        <option value="jpeg">JPG</option>
+                        <option value="png">PNG</option>
+                        <option value="gif">GIF</option>
+                      </select>
+                      <select
+                        value={sortBy}
+                        onChange={(e) => setSortBy(e.target.value)}
+                        className={`px-2 py-1 rounded-md text-sm ${isDarkMode ? 'bg-gray-800 text-white border-gray-700' : 'bg-white text-gray-800 border-gray-300'} border focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                      >
+                        <option value="date">Date Added</option>
+                        <option value="name">Name</option>
+                        <option value="size">Size</option>
+                      </select>
+                    </div>
+                    {images.length > 0 && (
+                      <button
+                        onClick={() => {
+                          setImages([]);
+                          toast.info("All images removed", {
+                            position: "bottom-right",
+                            autoClose: 2000
+                          });
+                        }}
+                        className="flex items-center text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors"
+                        aria-label="Remove all images"
+                      >
+                        <Trash2 className="h-4 w-4 mr-1" />
+                        <span>Clear all</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                   <AnimatePresence>
-                    {images.map((image, index) => (
-                      <motion.div 
+                    {getFilteredAndSortedImages().map((image, index) => (
+                      <motion.div
                         key={image.id}
                         initial={{ opacity: 0, scale: 0.8 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.8, y: 20 }}
                         transition={{ duration: 0.3 }}
-                        className="relative group bg-white rounded-lg overflow-hidden shadow-md"
+                        className={`relative group ${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg overflow-hidden shadow-md`}
                       >
                         <div className="aspect-square overflow-hidden">
                           <img
                             src={image.url}
                             alt={`Preview ${index + 1}`}
                             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
+                            onLoad={(e) => {
+                              updateImageDimensions(image.id, e.target.naturalWidth, e.target.naturalHeight);
+                            }}
+                            onClick={() => handleImageClick(image)}
                           />
                         </div>
-                        <motion.button
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                          onClick={() => removeImage(index)}
-                          className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity shadow-lg"
-                          aria-label={`Remove image ${image.name}`}
-                        >
-                          <X className="h-4 w-4" />
-                        </motion.button>
-                        <div className="p-2 bg-white">
-                          <p className="text-sm truncate text-gray-600">{image.name}</p>
+                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-opacity flex items-center justify-center space-x-2">
+                          <motion.button
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => handleImageClick(image)}
+                            className="p-2 bg-white rounded-full opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity shadow-lg"
+                            aria-label="View full size"
+                          >
+                            <Maximize2 className="h-4 w-4 text-gray-800" />
+                          </motion.button>
+                          <motion.button
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => downloadImage(image)}
+                            className="p-2 bg-white rounded-full opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity shadow-lg"
+                            aria-label="Download image"
+                          >
+                            <Download className="h-4 w-4 text-gray-800" />
+                          </motion.button>
+                          <motion.button
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => shareImage(image)}
+                            className="p-2 bg-white rounded-full opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity shadow-lg"
+                            aria-label="Share image"
+                          >
+                            <Share2 className="h-4 w-4 text-gray-800" />
+                          </motion.button>
+                          <motion.button
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => removeImage(index)}
+                            className="p-2 bg-white rounded-full opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity shadow-lg"
+                            aria-label={`Remove image ${image.name}`}
+                          >
+                            <X className="h-4 w-4 text-gray-800" />
+                          </motion.button>
+                        </div>
+                        <div className={`p-2 ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                          <p className="text-sm truncate">{image.name}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            {(image.size / 1024 / 1024).toFixed(2)} MB
+                          </p>
                         </div>
                       </motion.div>
                     ))}
@@ -404,10 +553,10 @@ const ProductImageCarousel = () => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.4 }}
-            className="bg-gradient-to-b from-gray-50 to-white rounded-xl shadow-xl p-8 border border-gray-100"
+            className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-xl p-8 border ${isDarkMode ? 'border-gray-700' : 'border-gray-100'}`}
           >
-            <h2 className="text-2xl font-semibold mb-6 text-center text-gray-800">Image Showcase</h2>
-            
+            <h2 className={`text-2xl font-semibold mb-6 text-center ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>Image Showcase</h2>
+
             {images.length > 0 ? (
               <div className="carousel-container">
                 <div className="relative">
@@ -419,20 +568,24 @@ const ProductImageCarousel = () => {
                             src={image.url}
                             alt={`Product image ${index + 1}`}
                             className="absolute top-0 left-0 w-full h-full object-contain rounded-md"
+                            onClick={() => handleImageClick(image)}
                           />
                         </div>
-                        <motion.div 
+                        <motion.div
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: 0.3 }}
-                          className="slide-content text-center mt-4 bg-white bg-opacity-70 backdrop-blur-sm py-2 px-4 rounded-full mx-auto max-w-max opacity-0 transition-opacity duration-500"
+                          className={`slide-content text-center mt-4 ${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'} bg-opacity-70 backdrop-blur-sm py-2 px-4 rounded-full mx-auto max-w-max opacity-0 transition-opacity duration-500`}
                         >
-                          <p className="text-gray-800 font-medium">{image.name}</p>
+                          <p className="font-medium">{image.name}</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            {(image.size / 1024 / 1024).toFixed(2)} MB
+                          </p>
                         </motion.div>
                       </div>
                     ))}
                   </Slider>
-                  
+
                   {/* Thumbnail navigator */}
                   {images.length > 1 && (
                     <div className="mt-6">
@@ -443,11 +596,10 @@ const ProductImageCarousel = () => {
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
                             onClick={() => sliderRef.current.slickGoTo(index)}
-                            className={`focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-md overflow-hidden transition-all ${
-                              sliderRef.current && sliderRef.current.innerSlider.state.currentSlide === index
+                            className={`focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-md overflow-hidden transition-all ${sliderRef.current && sliderRef.current.innerSlider.state.currentSlide === index
                                 ? 'ring-2 ring-blue-500 shadow-md'
                                 : 'opacity-70 hover:opacity-100'
-                            }`}
+                              }`}
                             aria-label={`Go to image ${index + 1}`}
                           >
                             <div className="w-16 h-16">
@@ -465,7 +617,7 @@ const ProductImageCarousel = () => {
                 </div>
               </div>
             ) : (
-              <div className="text-center py-16 text-gray-500">
+              <div className="text-center py-16 text-gray-500 dark:text-gray-400">
                 <ImageIcon className="h-16 w-16 mx-auto mb-4 opacity-30" />
                 <p>No images to display. Please upload some images first.</p>
               </div>
@@ -473,16 +625,80 @@ const ProductImageCarousel = () => {
           </motion.div>
         )}
       </AnimatePresence>
-      
+
+      {/* Fullscreen Image Modal */}
+      <AnimatePresence>
+        {selectedImage && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75"
+            onClick={closeFullscreen}
+          >
+            <motion.div
+              initial={{ scale: 0.8 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.8 }}
+              className="relative max-w-7xl mx-auto p-4"
+            >
+              <img
+                src={selectedImage.url}
+                alt={selectedImage.name}
+                className="max-h-[90vh] w-auto mx-auto rounded-lg shadow-2xl"
+              />
+              <div className="absolute top-4 right-4 flex space-x-2">
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => downloadImage(selectedImage)}
+                  className="p-2 bg-white rounded-full shadow-lg"
+                  aria-label="Download image"
+                >
+                  <Download className="h-5 w-5 text-gray-800" />
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => shareImage(selectedImage)}
+                  className="p-2 bg-white rounded-full shadow-lg"
+                  aria-label="Share image"
+                >
+                  <Share2 className="h-5 w-5 text-gray-800" />
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={closeFullscreen}
+                  className="p-2 bg-white rounded-full shadow-lg"
+                  aria-label="Close fullscreen"
+                >
+                  <X className="h-5 w-5 text-gray-800" />
+                </motion.button>
+              </div>
+              <div className="absolute bottom-4 left-4 right-4 bg-white bg-opacity-90 backdrop-blur-sm rounded-lg p-4 shadow-lg">
+                <h3 className="font-semibold text-gray-800">{selectedImage.name}</h3>
+                <p className="text-sm text-gray-600">
+                  Size: {(selectedImage.size / 1024 / 1024).toFixed(2)} MB
+                </p>
+                <p className="text-sm text-gray-600">
+                  Dimensions: {selectedImage.dimensions.width} x {selectedImage.dimensions.height}
+                </p>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Accessibility and information note */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.5 }}
-        className="mt-12 text-sm text-gray-500 bg-gray-50 p-4 rounded-lg"
+        className={`mt-12 text-sm ${isDarkMode ? 'text-gray-400 bg-gray-800' : 'text-gray-500 bg-gray-50'} p-4 rounded-lg`}
       >
         <p>
-          <span className="font-semibold">Accessibility features:</span> Keyboard navigation, 
+          <span className="font-semibold">Accessibility features:</span> Keyboard navigation,
           focus indicators, ARIA labels, and screen reader support are implemented for an inclusive user experience.
         </p>
       </motion.div>
