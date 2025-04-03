@@ -59,7 +59,7 @@ A modern, feature-rich React application for managing and showcasing product ima
 ## 🚀 Deployment
 
 The application is deployed on Vercel:
-[View Live Demo](https://your-vercel-url.vercel.app)
+[View Live Demo](https://interview-project-virid-two.vercel.app/)
 
 ## 📁 Project Structure
 
@@ -116,7 +116,7 @@ src/
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/meliotech-product-carousel.git
+   git clone https://github.com/BakangMonei/interview-project
    ```
 
 2. Install dependencies:
