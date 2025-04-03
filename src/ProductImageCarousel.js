@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import Slider from 'react-slick';
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
-import { Upload, X, ChevronLeft, ChevronRight, Image as ImageIcon, Trash2, Maximize2, Download, Share2, Filter } from 'lucide-react';
+import { Upload, X, ChevronLeft, ChevronRight, Image as ImageIcon, Trash2, Maximize2, Download, Share2, Filter, CheckCircle2, XCircle } from 'lucide-react';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -15,8 +15,11 @@ const ProductImageCarousel = ({ isDarkMode }) => {
   const [selectedImage, setSelectedImage] = useState(null);
   const [filterType, setFilterType] = useState('all');
   const [sortBy, setSortBy] = useState('date');
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [showPopover, setShowPopover] = useState(false);
   const fileInputRef = useRef(null);
   const sliderRef = useRef(null);
+  const popoverRef = useRef(null);
 
   // Handle file selection
   const handleFileChange = async (e) => {
@@ -312,6 +315,32 @@ const ProductImageCarousel = ({ isDarkMode }) => {
   const closeFullscreen = () => {
     setSelectedImage(null);
   };
+
+  const handleSubmit = () => {
+    if (images.length === 0) {
+      toast.error('Please upload at least one image before submitting');
+      return;
+    }
+    setIsSubmitted(true);
+    setShowPopover(true);
+    toast.success('Images submitted successfully!');
+  };
+
+  const handleClosePopover = () => {
+    setShowPopover(false);
+  };
+
+  // Close popover when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (popoverRef.current && !popoverRef.current.contains(event.target)) {
+        setShowPopover(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   return (
     <div className={`max-w-5xl mx-auto p-6 ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>
@@ -622,6 +651,100 @@ const ProductImageCarousel = ({ isDarkMode }) => {
                 <p>No images to display. Please upload some images first.</p>
               </div>
             )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Submit Button */}
+      {images.length > 0 && !isSubmitted && (
+        <motion.button
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="w-full mt-4 bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition-all duration-300 flex items-center justify-center gap-2"
+          onClick={handleSubmit}
+        >
+          <CheckCircle2 className="w-5 h-5" />
+          Submit Images
+        </motion.button>
+      )}
+
+      {/* Submitted Success Message */}
+      {isSubmitted && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mt-4 p-4 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 rounded-lg flex items-center justify-center gap-2"
+        >
+          <CheckCircle2 className="w-5 h-5" />
+          Images submitted successfully!
+        </motion.div>
+      )}
+
+      {/* Popover with Submitted Images */}
+      <AnimatePresence>
+        {showPopover && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          >
+            <motion.div
+              ref={popoverRef}
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden"
+            >
+              {/* Popover Header */}
+              <div className="flex items-center justify-between p-4 border-b dark:border-gray-700">
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+                  Submitted Images
+                </h3>
+                <button
+                  onClick={handleClosePopover}
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+                >
+                  <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                </button>
+              </div>
+
+              {/* Popover Content */}
+              <div className="p-4">
+                <Slider {...sliderSettings} className="submitted-carousel">
+                  {images.map((image, index) => (
+                    <div key={index} className="px-2">
+                      <div className="relative aspect-square rounded-lg overflow-hidden group">
+                        <img
+                          src={image.url}
+                          alt={`Product ${index + 1}`}
+                          className="w-full h-full object-cover"
+                          onClick={() => handleImageClick(image)}
+                        />
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => handleImageClick(image)}
+                            className="p-2 bg-white/10 hover:bg-white/20 rounded-full backdrop-blur-sm transition-colors"
+                          >
+                            <Maximize2 className="w-5 h-5 text-white" />
+                          </button>
+                          <button
+                            onClick={() => downloadImage(image)}
+                            className="p-2 bg-white/10 hover:bg-white/20 rounded-full backdrop-blur-sm transition-colors"
+                          >
+                            <Download className="w-5 h-5 text-white" />
+                          </button>
+                        </div>
+                      </div>
+                      <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                        <p>Size: {image.size}</p>
+                        <p>Dimensions: {image.dimensions.width}x{image.dimensions.height}</p>
+                      </div>
+                    </div>
+                  ))}
+                </Slider>
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
