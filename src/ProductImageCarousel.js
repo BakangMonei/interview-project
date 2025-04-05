@@ -20,6 +20,10 @@ const ProductImageCarousel = ({ isDarkMode }) => {
   const fileInputRef = useRef(null);
   const sliderRef = useRef(null);
   const popoverRef = useRef(null);
+  const [isDraggingCarousel, setIsDraggingCarousel] = useState(false);
+  const [dragStartX, setDragStartX] = useState(0);
+  const [dragStartY, setDragStartY] = useState(0);
+  const [currentSlide, setCurrentSlide] = useState(0);
 
   // Handle file selection
   const handleFileChange = async (e) => {
@@ -162,7 +166,7 @@ const ProductImageCarousel = ({ isDarkMode }) => {
     };
   }, []);
 
-  // Settings for the react-slick carousel
+  // Enhanced carousel settings
   const sliderSettings = {
     dots: true,
     infinite: images.length > 1,
@@ -179,6 +183,7 @@ const ProductImageCarousel = ({ isDarkMode }) => {
     fade: true,
     cssEase: "cubic-bezier(0.7, 0, 0.3, 1)",
     beforeChange: (current, next) => {
+      setCurrentSlide(next);
       document.querySelectorAll(".slide-content").forEach(slide => {
         slide.classList.add("opacity-0");
         slide.classList.remove("opacity-100");
@@ -341,6 +346,33 @@ const ProductImageCarousel = ({ isDarkMode }) => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Handle carousel drag
+  const handleCarouselDragStart = (e) => {
+    setIsDraggingCarousel(true);
+    setDragStartX(e.clientX);
+    setDragStartY(e.clientY);
+  };
+
+  const handleCarouselDragEnd = (e) => {
+    if (!isDraggingCarousel) return;
+
+    const dragEndX = e.clientX;
+    const dragEndY = e.clientY;
+    const deltaX = dragEndX - dragStartX;
+    const deltaY = dragEndY - dragStartY;
+
+    // Only handle horizontal drags
+    if (Math.abs(deltaX) > Math.abs(deltaY)) {
+      if (deltaX > 50) {
+        sliderRef.current?.slickPrev();
+      } else if (deltaX < -50) {
+        sliderRef.current?.slickNext();
+      }
+    }
+
+    setIsDraggingCarousel(false);
+  };
 
   return (
     <div className={`max-w-5xl mx-auto p-6 ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>
@@ -825,6 +857,105 @@ const ProductImageCarousel = ({ isDarkMode }) => {
           focus indicators, ARIA labels, and screen reader support are implemented for an inclusive user experience.
         </p>
       </motion.div>
+
+      {/* Enhanced Carousel */}
+      {previewMode && images.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          className="relative bg-white dark:bg-gray-800 rounded-xl shadow-xl overflow-hidden"
+          onMouseDown={handleCarouselDragStart}
+          onMouseUp={handleCarouselDragEnd}
+          onMouseLeave={handleCarouselDragEnd}
+          onTouchStart={handleCarouselDragStart}
+          onTouchEnd={handleCarouselDragEnd}
+        >
+          <Slider ref={sliderRef} {...sliderSettings}>
+            {images.map((image, index) => (
+              <div key={index} className="relative group">
+                <motion.div
+                  initial={{ scale: 1 }}
+                  animate={{ scale: isDraggingCarousel ? 0.98 : 1 }}
+                  transition={{ duration: 0.2 }}
+                  className="relative aspect-[16/9] overflow-hidden"
+                >
+                  <img
+                    src={image.url}
+                    alt={`Product ${index + 1}`}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    onClick={() => handleImageClick(image)}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <div className="absolute bottom-0 left-0 right-0 p-4 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                    <div className="flex items-center justify-between">
+                      <div className="text-white">
+                        <h3 className="text-lg font-semibold">{image.name}</h3>
+                        <p className="text-sm opacity-80">
+                          {(image.size / 1024 / 1024).toFixed(2)} MB • {image.dimensions.width}x{image.dimensions.height}
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <motion.button
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          onClick={() => handleImageClick(image)}
+                          className="p-2 bg-white/10 hover:bg-white/20 rounded-full backdrop-blur-sm transition-colors"
+                        >
+                          <Maximize2 className="w-5 h-5 text-white" />
+                        </motion.button>
+                        <motion.button
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          onClick={() => downloadImage(image)}
+                          className="p-2 bg-white/10 hover:bg-white/20 rounded-full backdrop-blur-sm transition-colors"
+                        >
+                          <Download className="w-5 h-5 text-white" />
+                        </motion.button>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              </div>
+            ))}
+          </Slider>
+
+          {/* Thumbnail Navigation */}
+          {images.length > 1 && (
+            <div className="absolute bottom-4 left-4 right-4">
+              <div className="flex justify-center gap-2 overflow-x-auto py-2 px-4 scrollbar-hide">
+                {images.map((image, index) => (
+                  <motion.button
+                    key={index}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => sliderRef.current?.slickGoTo(index)}
+                    className={`relative w-16 h-16 rounded-lg overflow-hidden transition-all ${
+                      currentSlide === index
+                        ? 'ring-2 ring-primary-500 shadow-lg'
+                        : 'opacity-50 hover:opacity-100'
+                    }`}
+                  >
+                    <img
+                      src={image.url}
+                      alt={`Thumbnail ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                    {currentSlide === index && (
+                      <motion.div
+                        layoutId="activeThumb"
+                        className="absolute inset-0 bg-primary-500/20"
+                        initial={false}
+                        transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                      />
+                    )}
+                  </motion.button>
+                ))}
+              </div>
+            </div>
+          )}
+        </motion.div>
+      )}
     </div>
   );
 };
